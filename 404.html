@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Beauty Match Kiosk</title>
+    <meta name="description" content="Scan, get your foundation matches, and pick up samples at Kiosk 2." />
+    <style>
+      :root {
+        --bg1:#fff7ed; --bg2:#ffffff; --bg3:#fdf2f8;
+        --ink:#111827; --muted:#4b5563;
+        --ring:#ec48994d;
+        --grad-a:#f59e0b; --grad-b:#ec4899;
+        --maxw: 430px;
+        --tap-min: 44px;
+        --r-xl: 24px; --r-lg: 20px; --r-md: 14px; --r-sm: 12px; --r-pill: 999px;
+        --shadow-xl: 0 20px 60px rgba(31,41,55,0.15);
+        --shadow-lg: 0 12px 36px rgba(31,41,55,0.12);
+        --shadow-md: 0 8px 20px rgba(31,41,55,0.08);
+        --shadow-sm: 0 4px 12px rgba(31,41,55,0.06);
+        --space-1:8px; --space-2:12px; --space-3:16px; --space-4:20px; --space-5:24px; --space-6:32px; --space-8:40px;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0; color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+        background:
+          radial-gradient(1200px 600px at 10% -10%, #ffe9d6 0, transparent 60%),
+          radial-gradient(1200px 600px at 110% 110%, #ffe3f2 0, transparent 60%),
+          linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+      }
+      .viewport{
+        min-height:100vh; display:flex; align-items:center; justify-content:center; padding: var(--space-3);
+      }
+      .phone{
+        width:min(var(--maxw), 100%);
+        height: calc(100vh - var(--space-6));
+        max-height: 900px;
+        display:flex; flex-direction:column;
+        border-radius: var(--r-xl); overflow:hidden;
+        border:1px solid rgba(0,0,0,0.05);
+        background:linear-gradient(180deg, #fff, #fffaf8);
+        box-shadow: var(--shadow-xl);
+        position:relative;
+      }
+      header.appbar{
+        display:flex; align-items:center; justify-content:center; gap:var(--space-2);
+        padding: var(--space-3) var(--space-4);
+        background: linear-gradient(90deg, #fff8ee 0%, #fff 50%, #fff5fb 100%);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+      }
+      .logo-badge{ padding:6px 12px; border-radius: var(--r-pill); border:1px solid #e5e7eb; background:#fff; color:#374151; font-size:12px; }
+      .title{ font-weight:300; font-size:18px; letter-spacing:.2px; }
+
+      /* CALM, CENTERED STAGE */
+      .content{
+        flex:1;
+        overflow:auto;
+        padding: var(--space-5);
+        display:grid;                 /* centers content visually */
+        align-content:center;
+        justify-items:center;
+        gap: var(--space-5);
+      }
+      /* If viewport is short, allow content to start near top so nothing is cut off */
+      @media (max-height: 700px) {
+        .content{ align-content:start; }
+      }
+
+      .screen{ width:100%; display:grid; justify-items:center; gap: var(--space-5); }
+      .card{
+        width:100%; max-width: 680px;
+        background: rgba(255,255,255,0.78);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.55);
+        border-radius: var(--r-lg);
+        padding: var(--space-6);
+        box-shadow: var(--shadow-lg);
+      }
+      .h1{ font-weight:300; font-size: 34px; line-height:1.15; margin:0 0 var(--space-2); }
+      .p{ color:var(--muted); margin:0; font-size: 14px; }
+      .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3); }
+      .row{ display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap; }
+
+      .btn{
+        display:inline-flex; align-items:center; justify-content:center;
+        min-height: var(--tap-min); min-width: var(--tap-min);
+        gap:8px; padding:12px 16px;
+        border-radius: var(--r-sm); border:1px solid rgba(0,0,0,0.06);
+        background:#fff; color:#111827;
+        transition: transform .14s ease, box-shadow .14s ease, background .2s ease;
+        cursor:pointer; user-select:none; box-shadow: var(--shadow-sm);
+      }
+      .btn:hover{ transform: translateY(-1px) scale(1.01); background:#fff; box-shadow: var(--shadow-md); }
+      .btn:active{ transform: translateY(0) scale(0.99); }
+      .btn:focus-visible{ outline: none; box-shadow: 0 0 0 3px var(--ring); }
+      .btn-full{ width:100%; }
+      .btn-grad{ color:#fff; border:none; background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); }
+      .btn-outline{ background:#ffffffe6; }
+
+      .chip{ display:inline-flex; align-items:center; padding:6px 12px; border-radius: var(--r-pill); border:1px solid #e5e7eb; background:#ffffffcc; color:#374151; font-size:12px; }
+      .input{ width:100%; background:#ffffffcc; border:1px solid #e5e7eb; border-radius: var(--r-sm); padding:12px 14px;
+        outline:none; transition: border .14s ease, box-shadow .14s ease; min-height: var(--tap-min); }
+      .input:focus{ border-color:#f9a8d4; box-shadow: 0 0 0 3px rgba(236,72,153,.15); }
+      .progress{ width:100%; height:10px; border-radius: var(--r-pill); background:#e5e7eb; overflow:hidden; }
+      .progress>div{ height:100%; background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); transition: width .2s ease; }
+      .aspect-3-4{ position:relative; width:100%; padding-top:133.333%; border-radius: 16px; overflow:hidden; background:#f3f4f6; }
+      .aspect-video{ position:relative; width:100%; padding-top:56.25%; border-radius: 16px; overflow:hidden; background:#f3f4f6; }
+      .abs{ position:absolute; inset:0; }
+      .scan-beam{ position:absolute; left:0; right:0; top:0; height:80px;
+        background: linear-gradient(to bottom, rgba(236,72,153,0), rgba(236,72,153,.25), rgba(236,72,153,0));
+        animation: beam 2.2s ease-in-out infinite; }
+      @keyframes beam{ 0%{transform:translateY(-100%)} 50%{transform:translateY(0)} 100%{transform:translateY(-100%)} }
+      .round{ border-radius: 999px; box-shadow: var(--shadow-sm); border:1px solid #e5e7eb; }
+      .grid-sw{ display:grid; grid-template-columns:repeat(1, minmax(0,1fr)); gap:var(--space-3); }
+      @media(min-width:520px){ .grid-sw{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+      .note{ font-size:12px; color:#6b7280; background:#ffffffcc; border:1px solid #e5e7eb; border-radius: 12px; padding:10px; }
+      .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+      @media (prefers-reduced-motion: reduce) { .scan-beam { animation: none !important; } .btn { transition: none !important; } }
+      .fade-enter{ opacity:0; transform: translateY(8px); }
+      .fade-enter-active{ opacity:1; transform: translateY(0); transition: opacity 220ms ease, transform 220ms ease; }
+
+      .footer-wrap{ position:sticky; bottom:0; left:0; right:0; width:100%; }
+      .footer-card{ margin-top: var(--space-3); }
+    </style>
+  </head>
+  <body>
+    <div class="viewport">
+      <div class="phone" role="application" aria-label="Beauty Match Kiosk">
+        <header class="appbar" role="banner">
+          <span class="logo-badge">Beauty&nbsp;Match</span>
+          <span class="title" aria-hidden="true">Smart Color Match</span>
+        </header>
+        <div class="content"><div id="root"></div></div>
+      </div>
+    </div>
+
+    <!-- React + ReactDOM (CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel to run JSX directly -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- App -->
+    <script type="text/babel" data-presets="env,react">
+      const { useState, useEffect, useRef, useCallback } = React;
+
+      const SKIN_TONES = ["#F8E7DA","#F6DFC6","#F4D7B4","#F4CFA6","#F4C2A1","#F0B895","#E8B4A0","#DCA58B","#CF987A","#C2866A","#B5755B","#A9674F","#9C5A44","#8E4B38","#7F3F2F","#6F3327","#5F2A21"];
+      const pick = a => a[Math.floor(Math.random()*a.length)];
+      const db = { k:'beauty_kiosk_foundations_v7',
+        list(){ try{return JSON.parse(localStorage.getItem(this.k)||'[]')}catch{return []} },
+        save(v){ try{localStorage.setItem(this.k, JSON.stringify(v))}catch{} },
+        clear(){ this.save([]) },
+        gen(){ const undertones=['warm','cool','neutral'], coverage=['light','medium','full'], finish=['matte','satin','dewy','natural'], skinTypes=['dry','oily','combination','normal','sensitive'];
+          return { shade_name:'Shade '+Math.random().toString(36).slice(2,6).toUpperCase(), hex_color:pick(SKIN_TONES), undertone:pick(undertones), coverage:pick(coverage), finish:pick(finish), skin_type:pick(skinTypes), confidence_score:Math.round(82+Math.random()*16) }; } };
+
+      const Screen = ({ children, keyId }) => {
+        const ref = React.useRef(null);
+        useEffect(()=>{
+          const n = ref.current;
+          if (!n) return;
+          n.classList.add('fade-enter');
+          requestAnimationFrame(()=> n.classList.add('fade-enter-active'));
+        }, [keyId]);
+        return <section ref={ref} className="screen">{children}</section>;
+      };
+      const H1 = ({ children }) => <h1 className="h1">{children}</h1>;
+      const P = ({ children }) => <p className="p">{children}</p>;
+      const Button = ({ children, kind='solid', full=false, onClick, type, ariaLabel }) => {
+        const cls = "btn "+(kind==='grad'?'btn-grad':(kind==='outline'?'btn-outline':''))+(full?' btn-full':'');
+        return <button aria-label={ariaLabel} type={type} className={cls} onClick={onClick}>{children}</button>;
+      };
+      const Progress = ({ value=0, label }) => (
+        <div className="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(value)} aria-label={label}>
+          <div style={{width:value+'%'}} />
+        </div>
+      );
+      const Card = ({ children }) => <div className="card">{children}</div>;
+
+      function WelcomeScreen({ onStart }){
+        return (
+          <Screen keyId="welcome">
+            <Card>
+              <H1>Find your foundation match</H1>
+              <P>Fast scan. Clear picks. Samples at Kiosk 2.</P>
+              <div style={{display:'flex', gap:12, marginTop:20}} aria-hidden="true">
+                <div className="round" style={{padding:10, background:'#ffffffb3', border:'1px solid #e5e7eb'}}>📷</div>
+                <div className="round" style={{padding:10, background:'#ffffffb3', border:'1px solid #e5e7eb'}}>✨</div>
+                <div className="round" style={{padding:10, background:'#ffffffb3', border:'1px solid #e5e7eb'}}>💖</div>
+              </div>
+              <div style={{marginTop:24}}>
+                <Button kind="grad" full onClick={onStart} ariaLabel="Start">Get started</Button>
+              </div>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function FaceScanner({ onBack, onDone }){
+        const v = useRef(null);
+        const [p, setP] = useState(0);
+        const [camStatus, setCamStatus] = useState('request');
+        useEffect(() => {
+          let stream;
+          (async () => {
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+              if (v.current) { v.current.srcObject = stream; await v.current.play(); }
+              setCamStatus('ok');
+            } catch(e) {
+              setCamStatus('blocked');
+            }
+          })();
+          const id = setInterval(() => setP(x=>Math.min(100, x+1.5)), 80);
+          const t = setTimeout(() => onDone(), 4500);
+          return () => { clearInterval(id); clearTimeout(t); if (stream) stream.getTracks().forEach(t=>t.stop()); };
+        }, [onDone]);
+        return (
+          <Screen keyId="scan">
+            <Card aria-busy={camStatus==='request'}>
+              <H1>Face scan</H1>
+              <P>We analyze color only. We don’t store your photo.</P>
+              <div className="aspect-3-4" style={{marginTop:12}}>
+                <video className="abs" ref={v} playsInline muted aria-label="Live camera preview" />
+                {camStatus !== 'blocked' && <div className="scan-beam" aria-hidden="true"></div>}
+                <div className="abs" style={{border:'2px solid rgba(209,213,219,0.6)', borderRadius:16}}></div>
+                {camStatus==='blocked' && (
+                  <div className="abs" style={{display:'grid', placeItems:'center', padding:'16px', textAlign:'center'}}>
+                    <div className="card" style={{maxWidth:'90%'}}>
+                      <div className="p">Camera access is off. You can continue without the camera.</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div style={{marginTop:16}}>
+                <P>Analyzing skin tone. This takes a moment.</P>
+                <Progress value={p} label="Scan progress" />
+              </div>
+              <div className="row" style={{marginTop:20}}>
+                <Button kind="outline" onClick={onBack}>Back</Button>
+                <Button kind="grad" onClick={onDone}>Continue</Button>
+              </div>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function EmailCollection({ onBack, onSubmit }){
+        const [email, setEmail] = useState('');
+        const [err, setErr] = useState('');
+        const go = (e) => {
+          e && e.preventDefault();
+          const ok = /.+@.+\..+/.test(email);
+          if (!ok) { setErr('Enter a valid email address.'); return; }
+          onSubmit(email);
+        };
+        return (
+          <Screen keyId="email">
+            <Card>
+              <H1>Contact email</H1>
+              <P>We’ll send your shade matches here so Kiosk 2 can find you.</P>
+              <form onSubmit={go}>
+                <label className="sr" htmlFor="email">Email address</label>
+                <input id="email" className="input" style={{marginTop:12}} type="email" inputMode="email"
+                  placeholder="you@domain.com"
+                  aria-invalid={!!err} aria-describedby="email-help"
+                  value={email} onChange={e=>{setEmail(e.target.value); setErr('')}} />
+                <div id="email-help" className="p" style={{marginTop:8}}>Use an email you can open nearby.</div>
+                {err && <div role="alert" style={{color:'#b91c1c', fontSize:14, marginTop:8}}>{err}</div>}
+                <div className="row" style={{marginTop:20}}>
+                  <Button type="button" kind="outline" onClick={onBack}>Back</Button>
+                  <Button type="submit" kind="grad">Continue</Button>
+                </div>
+              </form>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function FoundationCreator({ onComplete }){
+        const D = 90000; // 90 seconds
+        const [elapsed, setElapsed] = useState(0);
+        const ref = useRef(onComplete);
+        useEffect(()=>{ ref.current = onComplete }, [onComplete]);
+        useEffect(() => {
+          const start = Date.now();
+          const int = setInterval(()=> setElapsed(Date.now()-start), 200);
+          const half = setTimeout(()=> db.save(Array.from({length:5}).map(()=> db.gen())), Math.min(45000, D*0.5));
+          const timer = setTimeout(()=> ref.current && ref.current(), D);
+          return () => { clearInterval(int); clearTimeout(half); clearTimeout(timer); };
+        }, []);
+        const pct = Math.min(100, Math.round((elapsed/D)*100));
+        const remainingSec = Math.max(0, Math.ceil((D - elapsed)/1000));
+        const mm = String(Math.floor(remainingSec/60)).padStart(1,'0');
+        const ss = String(remainingSec%60).padStart(2,'0');
+        const steps = ["Analyzing undertone","Measuring depth","Balancing color","Selecting coverage & finish","Mixing shades"];
+        const msg = steps[Math.min(steps.length-1, Math.floor((pct/100)*steps.length))];
+        return (
+          <div className="footer-wrap" aria-live="polite">
+            <div className="card footer-card">
+              <div className="row" style={{justifyContent:'space-between', fontSize:12, color:'#374151', marginBottom:6}}>
+                <span>{msg}</span><span>Time remaining: {mm}:{ss}</span>
+              </div>
+              <Progress value={pct} label="Shade creation progress" />
+            </div>
+          </div>
+        );
+      }
+
+      function PersonalInfoForm({ onBack }){
+        const [f, setF] = useState({skin_type:'',preferred_coverage:'',preferred_finish:'',skin_concerns:'',current_foundation_brand:'',foundation_shade_match_issues:''});
+        const u=(k,v)=> setF(s=>({...s,[k]:v}));
+        return (
+          <Screen keyId="form">
+            <Card>
+              <H1>Your preferences</H1>
+              <P>Optional, but it helps us fine-tune your matches.</P>
+              <div style={{display:'grid', gap:12, marginTop:12}}>
+                <input className="input" placeholder="Skin type (dry, oily, combination, normal, sensitive)" value={f.skin_type} onChange={e=>u('skin_type',e.target.value)} />
+                <input className="input" placeholder="Preferred coverage (light, medium, full)" value={f.preferred_coverage} onChange={e=>u('preferred_coverage',e.target.value)} />
+                <input className="input" placeholder="Preferred finish (matte, satin, dewy, natural)" value={f.preferred_finish} onChange={e=>u('preferred_finish',e.target.value)} />
+                <input className="input" placeholder="Skin concerns (acne, redness, etc.)" value={f.skin_concerns} onChange={e=>u('skin_concerns',e.target.value)} />
+                <input className="input" placeholder="Current foundation brand" value={f.current_foundation_brand} onChange={e=>u('current_foundation_brand',e.target.value)} />
+                <input className="input" placeholder="Shade-matching issues you’ve had" value={f.foundation_shade_match_issues} onChange={e=>u('foundation_shade_match_issues',e.target.value)} />
+              </div>
+              <div className="row" style={{marginTop:20}}>
+                <Button kind="outline" onClick={onBack}>Back to menu</Button>
+                <Button kind="grad" onClick={onBack}>Save</Button>
+              </div>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function VideoPlayer({ onBack }){
+        const r=useRef(null);
+        useEffect(()=>{ r.current && r.current.play().catch(()=>{}); },[]);
+        return (
+          <Screen keyId="video">
+            <Card>
+              <H1>Short video</H1>
+              <P>Tips from an artist while your shades are prepared.</P>
+              <div className="aspect-video" style={{marginTop:12}}>
+                <video className="abs" ref={r} loop muted controls aria-label="Video player">
+                  <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <div style={{marginTop:16}}>
+                <Button kind="grad" full onClick={onBack}>Back to menu</Button>
+              </div>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function RobotInfo({ onBack }){
+        const Step = ({label, desc}) => (
+          <div className="card" style={{display:'flex', gap:12, alignItems:'center'}}>
+            <div className="round" style={{width:40,height:40,display:'grid',placeItems:'center',background:'#f3f4f6'}} aria-hidden="true">
+              <div style={{width:18,height:18,borderRadius:'50%',background:'#d1d5db'}}></div>
+            </div>
+            <div>
+              <div style={{fontWeight:600}}>{label}</div>
+              <div className="p">{desc}</div>
+            </div>
+          </div>
+        );
+        return (
+          <Screen keyId="robot">
+            <Card>
+              <H1>What happens at Kiosk 2</H1>
+              <P>Here’s how your sample is prepared, step by step.</P>
+              <div style={{display:'grid', gap:12, marginTop:12}}>
+                <Step label="Place an empty vial" desc="The robot prepares a clean container." />
+                <Step label="Dispense base & pigments" desc="Exact amounts for your shade." />
+                <Step label="Mix to a smooth finish" desc="Even texture for a natural look." />
+                <Step label="Seal and label" desc="Your sample is packed and ready." />
+              </div>
+              <Button kind="grad" full style={{marginTop:16}} onClick={onBack}>Back to menu</Button>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function MakeupGame({ onBack, onDiscount }){
+        const c=useRef(null), [score,setScore]=useState(0), [run,setRun]=useState(true);
+        const basket=useRef({x:140,y:380,w:60,h:20}), items=useRef([]), loop=useRef(null);
+        useEffect(()=>{
+          const W=320,H=420, ctx=c.current.getContext('2d');
+          const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+          function spawn(){ items.current.push({x:rand(10,W-10),y:-10,vy:rand(2,4),r:8})}
+          function draw(){ ctx.clearRect(0,0,W,H); ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(0,0,W,H);
+            ctx.fillStyle='rgba(31,41,55,0.9)'; ctx.fillRect(basket.current.x,basket.current.y,basket.current.w,basket.current.h);
+            ctx.fillStyle='rgba(236,72,153,0.75)'; items.current.forEach(it=>{ it.y+=it.vy; ctx.beginPath(); ctx.arc(it.x,it.y,it.r,0,Math.PI*2); ctx.fill();
+              if(it.y+it.r>=basket.current.y && it.x>=basket.current.x && it.x<=basket.current.x+basket.current.w){ it.y=H+100; setScore(s=>s+1); } });
+            items.current=items.current.filter(it=>it.y<H+20);
+          }
+          function tick(){ if(!run) return; if(Math.random()<0.06) spawn(); draw(); loop.current=requestAnimationFrame(tick); }
+          tick(); return ()=> cancelAnimationFrame(loop.current);
+        },[run]);
+        useEffect(()=>{
+          const onMove=(e)=>{ const r=c.current.getBoundingClientRect(); const x=(e.clientX||(e.touches?.[0]?.clientX??0))-r.left;
+            const W=320; basket.current.x=Math.max(0,Math.min(W-basket.current.w,x-basket.current.w/2)); };
+          window.addEventListener('mousemove',onMove); window.addEventListener('touchmove',onMove,{passive:true});
+          return ()=>{ window.removeEventListener('mousemove',onMove); window.removeEventListener('touchmove',onMove); };
+        },[]);
+        useEffect(()=>{ const d=Math.min(15,Math.floor(score/3)*3); onDiscount && onDiscount(d); },[score,onDiscount]);
+        return (
+          <Screen keyId="game">
+            <Card>
+              <H1>Mini-game</H1>
+              <P>Move to catch items. Each 3 points adds 3% off (up to 15%).</P>
+              <div className="round" style={{overflow:'hidden',border:'1px solid #e5e7eb', marginTop:12}}>
+                <canvas ref={c} width="320" height="420" style={{width:'100%', touchAction:'none'}} aria-label="Catch the items game canvas"></canvas>
+              </div>
+              <div className="row" style={{justifyContent:'space-between', marginTop:8}}>
+                <span className="p">Score: {score}</span>
+                <span className="p">Max discount: 15%</span>
+              </div>
+              <div className="row" style={{marginTop:16}}>
+                <Button kind="outline" onClick={()=>setRun(r=>!r)}>{run?'Pause':'Resume'}</Button>
+                <Button kind="grad" onClick={onBack}>Back to menu</Button>
+              </div>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function FoundationResults({ discount=0, onNew }){
+        const items = db.list();
+        const Swatch = ({f}) => (
+          <div className="card" style={{textAlign:'center'}}>
+            <div className="round" style={{width:84,height:84,margin:'0 auto',background:f.hex_color}} aria-label={f.shade_name}></div>
+            <div style={{marginTop:12}}>
+              <div style={{fontSize:14, fontWeight:600}}>{f.shade_name}</div>
+              <div className="p" style={{fontSize:12}}>{f.undertone} • {f.coverage} • {f.finish}</div>
+              <div className="p" style={{fontSize:12}}>Skin: {f.skin_type} • Confidence: {f.confidence_score}%</div>
+            </div>
+          </div>
+        );
+        return (
+          <Screen keyId="results">
+            <Card>
+              <H1>Your matches</H1>
+              <P>These are tailored to your scan and preferences.</P>
+              {discount>0 && <div className="card" style={{marginTop:12, fontSize:14}}>🎉 Game bonus applied: <b>{discount}% off</b></div>}
+              <div className="grid-sw" style={{marginTop:12}}>
+                {items.map((f,i)=> <Swatch key={i} f={f} />)}
+              </div>
+              <div className="note" style={{marginTop:12}}>We sent the details to your email. Show that email at <b>Kiosk 2</b> to receive your samples.</div>
+              <Button kind="grad" full style={{marginTop:16}} onClick={onNew}>Start a new session</Button>
+            </Card>
+          </Screen>
+        );
+      }
+
+      function ChoiceScreen({ onDoneAnalysis, onExit, onDiscount }){
+        const [v,setV]=useState('menu');
+        const done = useCallback(()=> onDoneAnalysis(), [onDoneAnalysis]);
+        return (
+          <Screen keyId="choices">
+            <FoundationCreator onComplete={done} />
+            {v==='menu' && (
+              <Card>
+                <H1>While we prepare your shades</H1>
+                <P>Choose one activity. You can return here anytime.</P>
+                <div className="grid2" style={{marginTop:12}}>
+                  <button className="btn btn-grad" onClick={()=>setV('form')}>📋 Your info</button>
+                  <button className="btn btn-grad" onClick={()=>setV('video')}>▶️ Watch video</button>
+                  <button className="btn btn-grad" onClick={()=>setV('robot')}>🤖 About Kiosk 2</button>
+                  <button className="btn btn-grad" onClick={()=>setV('game')}>🎮 Play game</button>
+                </div>
+                <Button kind="outline" full style={{marginTop:16}} onClick={onExit}>Exit</Button>
+              </Card>
+            )}
+            {v==='form'  && <PersonalInfoForm onBack={()=>setV('menu')} />}
+            {v==='video' && <VideoPlayer onBack={()=>setV('menu')} />}
+            {v==='robot' && <RobotInfo onBack={()=>setV('menu')} />}
+            {v==='game'  && <MakeupGame onBack={()=>setV('menu')} onDiscount={onDiscount} />}
+          </Screen>
+        );
+      }
+
+      function App(){
+        const [step, setStep] = useState('welcome');
+        const [discount, setDiscount] = useState(0);
+        useEffect(()=>{ db.clear(); },[]);
+        const startNew = () => { setDiscount(0); db.clear(); setStep('welcome'); };
+        return (
+          <div style={{display:'grid', gap:16, width:'100%'}}>
+            {step==='welcome' && <WelcomeScreen onStart={()=>setStep('scan')} />}
+            {step==='scan'    && <FaceScanner onBack={()=>setStep('welcome')} onDone={()=>setStep('email')} />}
+            {step==='email'   && <EmailCollection onBack={()=>setStep('scan')} onSubmit={()=>setStep('choices')} />}
+            {step==='choices' && <ChoiceScreen onDoneAnalysis={()=>setStep('results')} onExit={()=>setStep('welcome')} onDiscount={setDiscount} />}
+            {step==='results' && <FoundationResults discount={discount} onNew={startNew} />}
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
